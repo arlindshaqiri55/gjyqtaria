@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="sq">
 <head>
+  <script src="https://unpkg.com/aws-amplify@latest/dist/aws-amplify.min.js"></script>
+<script>
+  Amplify.configure({
+    Auth: {
+      region: 'us-east-1',
+      userPoolId: 'us-east-1_ddmanVTKY',
+      userPoolWebClientId: '2n3h3pmhsrmhleqtommajqu375'
+    }
+  });
+</script>
+
   <meta charset="UTF-8" />
   <title>Programi për vlerësim, Federata e Gjimnastikës e Kosovës.</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -49,6 +60,13 @@
   <header>
     Programi për vlerësim, Federata e Gjimnastikës e Kosovës.
   </header>
+<div id="login-section" style="padding:20px; text-align:center;">
+  <h3>Judge Login</h3>
+  <input type="text" id="username" placeholder="Username" style="margin:5px; padding:5px;">
+  <input type="password" id="password" placeholder="Password" style="margin:5px; padding:5px;">
+  <button onclick="signIn()" style="padding:6px 12px; margin:5px;">Login</button>
+  <p id="login-message" style="color:red;"></p>
+</div>
 
   <!-- NAVIGATION -->
   <nav>
@@ -118,7 +136,7 @@
   </nav>
 
   <!-- EVENT TABLE -->
-  <div class="container hidden" id="tableContainer">
+  <div class="container hidden" id="tableContainer" style="display:none;">
     <h2 id="categoryTitle"></h2>
     <button class="add-row-btn" onclick="addGymnastRow()">Shto gjimnaste</button>
     <table id="gymnastTable">
@@ -135,7 +153,7 @@
   </div>
 
   <!-- ALL-AROUND TABLE -->
-  <div class="container hidden" id="allAroundContainer">
+  <div class="container hidden" id="allAroundContainer" style="display:none;">
     <h2>All Around – <span id="allAroundGroupName"></span></h2>
     <table id="allAroundTable">
       <thead>
@@ -148,7 +166,7 @@
   </div>
 
   <!-- TEAM RESULTS -->
-  <div class="container hidden" id="ekiporeContainer">
+  <div class="container hidden" id="ekiporeContainer" style="display:none;">
     <h2>Rezultatet Ekipore</h2>
     <table id="ekiporeTable">
       <thead>
@@ -302,5 +320,38 @@
       });
     }
   </script>
+<script>
+  async function signIn() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    try {
+      const user = await Amplify.Auth.signIn(username, password);
+      document.getElementById('login-message').style.color = 'green';
+      document.getElementById('login-message').innerText = 'Login successful!';
+      document.getElementById('login-section').style.display = 'none';
+
+      // Show judging tables after login
+      document.getElementById('tableContainer').style.display = 'block';
+      document.getElementById('allAroundContainer').style.display = 'block';
+      document.getElementById('ekiporeContainer').style.display = 'block';
+    } catch (error) {
+      document.getElementById('login-message').style.color = 'red';
+      document.getElementById('login-message').innerText = 'Login failed: ' + error.message;
+    }
+  }
+
+  // On page load, check if user is already logged in
+  Amplify.Auth.currentAuthenticatedUser()
+    .then(user => {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('tableContainer').style.display = 'block';
+      document.getElementById('allAroundContainer').style.display = 'block';
+      document.getElementById('ekiporeContainer').style.display = 'block';
+    })
+    .catch(() => {
+      document.getElementById('login-section').style.display = 'block';
+    });
+</script>
+
 </body>
 </html>
