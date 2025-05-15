@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="sq">
 <head>
-  <script src="https://unpkg.com/aws-amplify@latest/dist/aws-amplify.min.js"></script>
+<script src="https://unpkg.com/aws-amplify@latest/dist/aws-amplify.min.js"></script>
 <script>
+  const { Amplify, Auth } = window.aws_amplify;
+
   Amplify.configure({
     Auth: {
       region: 'us-east-1',
@@ -11,6 +13,7 @@
     }
   });
 </script>
+
 
   <meta charset="UTF-8" />
   <title>Programi për vlerësim, Federata e Gjimnastikës e Kosovës.</title>
@@ -325,7 +328,7 @@
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     try {
-      const user = await Amplify.Auth.signIn(username, password);
+      const user = await Auth.signIn(username, password);
       document.getElementById('login-message').style.color = 'green';
       document.getElementById('login-message').innerText = 'Login successful!';
       document.getElementById('login-section').style.display = 'none';
@@ -341,7 +344,7 @@
   }
 
   // On page load, check if user is already logged in
-  Amplify.Auth.currentAuthenticatedUser()
+  Auth.currentAuthenticatedUser()
     .then(user => {
       document.getElementById('login-section').style.display = 'none';
       document.getElementById('tableContainer').style.display = 'block';
