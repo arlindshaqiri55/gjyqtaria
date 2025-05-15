@@ -3,7 +3,9 @@
 <head>
 <script src="https://unpkg.com/aws-amplify@5.2.8/dist/aws-amplify.min.js"></script>
 <script>
-  const { Amplify, Auth } = window.aws_amplify;
+  const Amplify = window.AwsAmplify.Amplify;
+  const Auth = window.AwsAmplify.Auth;
+
 
   Amplify.configure({
     Auth: {
