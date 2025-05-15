@@ -342,7 +342,7 @@
   }
 
   // On page load, check if user is already logged in
-  Auth.currentAuthenticatedUser()
+  Amplify.Auth.currentAuthenticatedUser()
     .then(user => {
       document.getElementById('login-section').style.display = 'none';
       document.getElementById('tableContainer').style.display = 'block';
