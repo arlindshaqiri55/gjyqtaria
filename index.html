@@ -3,11 +3,7 @@
 <head>
 <script src="https://unpkg.com/aws-amplify@5.2.8/dist/aws-amplify.min.js"></script>
 <script>
-  const Amplify = window.AwsAmplify.Amplify;
-  const Auth = window.AwsAmplify.Auth;
-
-
-  Amplify.configure({
+    Amplify.configure({
     Auth: {
       region: 'us-east-1',
       userPoolId: 'us-east-1_ddmanVTKY',
@@ -330,7 +326,7 @@
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     try {
-      const user = await Auth.signIn(username, password);
+      const user = await Amplify.Auth.signIn(username, password);
       document.getElementById('login-message').style.color = 'green';
       document.getElementById('login-message').innerText = 'Login successful!';
       document.getElementById('login-section').style.display = 'none';
