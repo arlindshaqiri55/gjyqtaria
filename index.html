@@ -1,360 +1,102 @@
 <!DOCTYPE html>
 <html lang="sq">
 <head>
-<script src="https://unpkg.com/aws-amplify@5.2.8/dist/aws-amplify.min.js"></script>
-<script>
-    const Amplify = window.AwsAmplify.Amplify;
-    const Auth = window.AwsAmplify.Auth;
-    Amplify.configure({
-    Auth: {
-      region: 'us-east-1',
-      userPoolId: 'us-east-1_ddmanVTKY',
-      userPoolWebClientId: '2n3h3pmhsrmhleqtommajqu375'
-    }
-  });
-</script>
-
-
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Programi për vlerësim, Federata e Gjimnastikës e Kosovës.</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 1) Ngarkojmë AWS Amplify nga CDN -->
+  <script src="https://unpkg.com/aws-amplify@5.2.8/dist/aws-amplify.min.js"></script>
+
+  <script>
+    // 2) Destrukturojmë Amplify dhe Auth nga objekti global
+    const { Amplify, Auth } = window.aws_amplify || window.Amplify;
+
+    // 3) Konfigurimi i Cognito User Pool
+    Amplify.configure({
+      Auth: {
+        region: 'us-east-1',
+        userPoolId: 'us-east-1_ddmanVTKY',
+        userPoolWebClientId: '2n3h3pmhsrmhleqtommajqu375'
+      }
+    });
+
+    // 4) Funksioni për login
+    async function signIn() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      try {
+        await Auth.signIn(username, password);
+        // Nëse kalon, fshehim login-in dhe shfaqim tabelat
+        document.getElementById('login-message').style.color = 'green';
+        document.getElementById('login-message').innerText = 'Login successful!';
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('tableContainer').style.display = 'block';
+        document.getElementById('allAroundContainer').style.display = 'block';
+        document.getElementById('ekiporeContainer').style.display = 'block';
+      } catch (error) {
+        document.getElementById('login-message').style.color = 'red';
+        document.getElementById('login-message').innerText = 'Login failed: ' + error.message;
+      }
+    }
+
+    // 5) Kontrollojmë në ngarkim nëse përdoruesi është ende i autentifikuar
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.currentAuthenticatedUser()
+        .then(() => {
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('tableContainer').style.display = 'block';
+          document.getElementById('allAroundContainer').style.display = 'block';
+          document.getElementById('ekiporeContainer').style.display = 'block';
+        })
+        .catch(() => {
+          document.getElementById('login-section').style.display = 'block';
+        });
+    });
+  </script>
+
   <style>
+    /* ... Kopjoje këtu CSS‐in e mëparshëm për header, nav, tabela, etj. ... */
     body { margin: 0; font-family: Arial, sans-serif; background: linear-gradient(120deg, #aec6ff, #f8c7ff); }
     header { background: #0066cc; color: #fff; padding: 1.5rem; text-align: center; font-size:1.4rem; font-weight:bold; border-bottom:4px solid #004d99; }
-    nav { display:flex; justify-content:center; gap:1rem; background:#0099ff; padding:0.75rem; flex-wrap:wrap; }
-    .dropdown { position:relative; display:inline-block; }
-    .dropdown>button { border:2px solid #007acc; border-radius:4px; padding:0.5rem 1rem; cursor:pointer; font-size:1rem; font-weight:bold; color:#fff; }
-    .event-drop>button { background:#33bbff; }
-    .four-gare-drop>button { background:#ff9933; border-color:#cc6600; }
-    .ekipore-drop>button { background:#33cc33; border-color:#248f24; }
-    .dropdown-content { display:none; position:absolute; background:#fff; min-width:160px; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:99; }
-    .dropdown-content a { color:#333; padding:0.5rem 1rem; text-decoration:none; display:block; }
-    .dropdown-content a:hover { background:#f1f1f1; }
-    .dropdown:hover .dropdown-content { display:block; }
-    .container { width:98%; max-width:1400px; margin:1rem auto; background:#ffffffcc; padding:1rem; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.15); overflow-x:auto; }
-    h2 { margin-top:0; font-size:1.3rem; color:#333; text-align:center; font-weight:bold; }
-    table { width:100%; border-collapse:collapse; margin-bottom:1rem; min-width:1100px; }
-    thead { background:#ffcc66; }
-    th, td { border:1px solid #ccc; padding:0.6rem; text-align:center; }
-    th { font-weight:bold; background:#ffe680; }
-    .add-row-btn { padding:0.6rem 1.2rem; border:2px solid #004da8; background:#0066cc; color:#fff; border-radius:6px; cursor:pointer; font-size:1rem; font-weight:bold; margin:0.5rem 0; }
-    .add-row-btn:hover, .calculate-btn:hover { background:#004da8; }
-    .calculate-btn { padding:0.4rem 0.8rem; border:2px solid #004da8; background:#0066cc; color:#fff; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; }
-    input.emri-input { width:120px; }
-    input[type="number"], input[type="text"], select { padding:0.3rem; box-sizing:border-box; font-size:0.9rem; }
-    .e-column { background:#ffe5e5; }
-    .d-cr-column { background:#e5ffe5; }
-    .final-score-col { background:#fff7cc; }
-    .renditja-col { background:#d6f5d6; }
-    .hidden { display:none; }
-    .rank-1 { background:gold; font-weight:bold; }
-    .rank-2 { background:silver; font-weight:bold; }
-    .rank-3 { background:#cd7f32; font-weight:bold; }
-    @media (max-width:600px) {
-      header { font-size:1.2rem; padding:1rem; }
-      nav { flex-direction:column; align-items:center; }
-      .dropdown>button { margin:0.3rem 0; }
-      .add-row-btn { width:100%; }
-      table { min-width:800px; }
-    }
+    /* … dhe pjesa tjetër e stilimeve … */
   </style>
 </head>
+
 <body>
-  <header>
-    Programi për vlerësim, Federata e Gjimnastikës e Kosovës.
-  </header>
-<div id="login-section" style="padding:20px; text-align:center;">
-  <h3>Judge Login</h3>
-  <input type="text" id="username" placeholder="Username" style="margin:5px; padding:5px;">
-  <input type="password" id="password" placeholder="Password" style="margin:5px; padding:5px;">
-  <button onclick="signIn()" style="padding:6px 12px; margin:5px;">Login</button>
-  <p id="login-message" style="color:red;"></p>
-</div>
+  <header>Programi për vlerësim, Federata e Gjimnastikës e Kosovës.</header>
 
-  <!-- NAVIGATION -->
-  <nav>
-    <div class="dropdown event-drop">
-      <button>Kapercime</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="showEventTable('Kapercime','Para-Yllka')">Para-Yllka</a>
-        <a href="#" onclick="showEventTable('Kapercime','Yllka')">Yllka</a>
-        <a href="#" onclick="showEventTable('Kapercime','Para-Pioniere')">Para-Pioniere</a>
-        <a href="#" onclick="showEventTable('Kapercime','Pioniere')">Pioniere</a>
-        <a href="#" onclick="showEventTable('Kapercime','Juniore')">Juniore</a>
-        <a href="#" onclick="showEventTable('Kapercime','Seniore')">Seniore</a>
-      </div>
-    </div>
+  <!-- SESSIÓN LOGIN -->
+  <div id="login-section" style="padding:20px; text-align:center;">
+    <h3>Judge Login</h3>
+    <input type="text" id="username" placeholder="Username" style="margin:5px; padding:5px;">
+    <input type="password" id="password" placeholder="Password" style="margin:5px; padding:5px;">
+    <button onclick="signIn()" style="padding:6px 12px; margin:5px;">Login</button>
+    <p id="login-message" style="color:red;"></p>
+  </div>
 
-    <div class="dropdown event-drop">
-      <button>Paralele e Shkallëzuar</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Para-Yllka')">Para-Yllka</a>
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Yllka')">Yllka</a>
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Para-Pioniere')">Para-Pioniere</a>
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Pioniere')">Pioniere</a>
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Juniore')">Juniore</a>
-        <a href="#" onclick="showEventTable('Paralele e Shkallëzuar','Seniore')">Seniore</a>
-      </div>
-    </div>
-
-    <div class="dropdown event-drop">
-      <button>Tra</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="showEventTable('Tra','Para-Yllka')">Para-Yllka</a>
-        <a href="#" onclick="showEventTable('Tra','Yllka')">Yllka</a>
-        <a href="#" onclick="showEventTable('Tra','Para-Pioniere')">Para-Pioniere</a>
-        <a href="#" onclick="showEventTable('Tra','Pioniere')">Pioniere</a>
-        <a href="#" onclick="showEventTable('Tra','Juniore')">Juniore</a>
-        <a href="#" onclick="showEventTable('Tra','Seniore')">Seniore</a>
-      </div>
-    </div>
-
-    <div class="dropdown event-drop">
-      <button>Parter</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="showEventTable('Parter','Para-Yllka')">Para-Yllka</a>
-        <a href="#" onclick="showEventTable('Parter','Yllka')">Yllka</a>
-        <a href="#" onclick="showEventTable('Parter','Para-Pioniere')">Para-Pioniere</a>
-        <a href="#" onclick="showEventTable('Parter','Pioniere')">Pioniere</a>
-        <a href="#" onclick="showEventTable('Parter','Juniore')">Juniore</a>
-        <a href="#" onclick="showEventTable('Parter','Seniore')">Seniore</a>
-      </div>
-    </div>
-
-    <div class="dropdown four-gare-drop">
-      <button>All Around</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="showAllAroundGroup('Para-Yllka')">Para-Yllka</a>
-        <a href="#" onclick="showAllAroundGroup('Yllka')">Yllka</a>
-        <a href="#" onclick="showAllAroundGroup('Para-Pioniere')">Para-Pioniere</a>
-        <a href="#" onclick="showAllAroundGroup('Pioniere')">Pioniere</a>
-        <a href="#" onclick="showAllAroundGroup('Juniore')">Juniore</a>
-        <a href="#" onclick="showAllAroundGroup('Seniore')">Seniore</a>
-      </div>
-    </div>
-
-    <div class="dropdown ekipore-drop">
-      <button onclick="showEkipore()">Ekipore</button>
-    </div>
+  <!-- NAVIGATION & KUTITË E TABELAVE (fshehur fillimisht) -->
+  <nav> 
+    <!-- ... Kopjo dropdown-et për Kapercime, Paralele, Tra, Parter, All Around, Ekipore … -->
   </nav>
 
-  <!-- EVENT TABLE -->
-  <div class="container hidden" id="tableContainer" style="display:none;">
-    <h2 id="categoryTitle"></h2>
-    <button class="add-row-btn" onclick="addGymnastRow()">Shto gjimnaste</button>
-    <table id="gymnastTable">
-      <thead>
-        <tr>
-          <th>Emri</th><th>Klubi</th><th>Numri i elementeve</th>
-          <th class="e-column">E1</th><th class="e-column">E2</th><th class="e-column">E3</th><th class="e-column">E4</th><th class="e-column">E Avg</th>
-          <th class="d-cr-column">D Score</th><th class="d-cr-column">CR1</th><th class="d-cr-column">CR2</th><th class="d-cr-column">CR3</th><th class="d-cr-column">CR4</th>
-          <th class="final-score-col">Pikët Finale</th><th class="renditja-col">Renditja</th><th>Veprimet</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="container" id="tableContainer" style="display:none;">
+    <!-- ... Tabela e gjimnastëve për event specifik … -->
   </div>
 
-  <!-- ALL-AROUND TABLE -->
-  <div class="container hidden" id="allAroundContainer" style="display:none;">
-    <h2>All Around – <span id="allAroundGroupName"></span></h2>
-    <table id="allAroundTable">
-      <thead>
-        <tr>
-          <th>Emri</th><th>Klubi</th><th>Kapercime</th><th>Paralele e Shkallëzuar</th><th>Tra</th><th>Parter</th><th>Totali All Around</th><th>Renditja</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="container" id="allAroundContainer" style="display:none;">
+    <!-- ... Tabela All Around … -->
   </div>
 
-  <!-- TEAM RESULTS -->
-  <div class="container hidden" id="ekiporeContainer" style="display:none;">
-    <h2>Rezultatet Ekipore</h2>
-    <table id="ekiporeTable">
-      <thead>
-        <tr>
-          <th>Klubi</th><th>Kapercime</th><th>Paralele e Shkallëzuar</th><th>Tra</th><th>Parter</th><th>Totali Ekipor</th><th>Renditja</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="container" id="ekiporeContainer" style="display:none;">
+    <!-- ... Tabela Ekipore … -->
   </div>
 
   <script>
-    let finalScores = {"Kapercime": {}, "Paralele e Shkallëzuar": {}, "Tra": {}, "Parter": {}};
-    let currentEvent = "", currentGroup = "";
-
-    function showEventTable(ev, grp) {
-      currentEvent = ev; currentGroup = grp;
-      document.getElementById('allAroundContainer').classList.add('hidden');
-      document.getElementById('ekiporeContainer').classList.add('hidden');
-      const tbl = document.getElementById('tableContainer');
-      tbl.classList.remove('hidden');
-      document.getElementById('categoryTitle').textContent = ev + ' - ' + grp;
-      document.querySelector('#gymnastTable tbody').innerHTML = '';
-    }
-
-    function addGymnastRow() {
-      const tbody = document.querySelector('#gymnastTable tbody');
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td><input type="text" class="emri-input" placeholder="Emri i gjimnastes"/></td>
-        <td><select class="club-select">
-          <option value="">--Klubi--</option>
-          <option value="Akademia e Gjimnastikës UNIVERSITETI">Akademia e Gjimnastikës UNIVERSITETI</option>
-          <option value="Adakemia e Gjimnastikës ARDHMËRIA">Adakemia e Gjimnastikës ARDHMËRIA</option>
-          <option value="Klubi i Gjimnastikës ELITA">Klubi i Gjimnastikës ELITA</option>
-          <option value="Klubi I Gjimnastikës FUSHË KOSOVË">Klubi I Gjimnastikës FUSHË KOSOVË</option>
-          <option value="Klubi i Gjimnastikës VUSHTRRIA">Klubi i Gjimnastikës VUSHTRRIA</option>
-          <option value="Klubi i Gjimnastikës TREPÇA">Klubi i Gjimnastikës TREPÇA</option>
-          <option value="Klubi i Gjimnastikës OMNISPORT">Klubi i Gjimnastikës OMNISPORT</option>
-          <option value="Klubi i Gjimnastikës &quot;HALIL ALIDEMA&quot; Viti">Klubi i Gjimnastikës "HALIL ALIDEMA" Viti</option>
-          <option value="Klubi i Gjimnastikës &quot;HALIL ALIDEMA&quot; Gjilan">Klubi i Gjimnastikës "HALIL ALIDEMA" Gjilan</option>
-          <option value="Klubi i Gjimnastikës LIPJAN">Klubi i Gjimnastikës LIPJAN</option>
-          <option value="Klubi i Gjimnastikës KULINA">Klubi i Gjimnastikës KULINA</option>
-          <option value="Klubi i Gjimnastikës LLAPI">Klubi i Gjimnastikës LLAPI</option>
-          <option value="Klubi i Gjimnastikës SKENDERAJ">Klubi i Gjimnastikës SKENDERAJ</option>
-          <option value="Klubi i Gjimnastikës GJIMNASTIKA">Klubi i Gjimnastikës GJIMNASTIKA</option>
-          <option value="Klubi i Gjimnastikës Ritmike POISE">Klubi i Gjimnastikës Ritmike POISE</option>
-          <option value="Klub i Gjimanstikes DRENASI">Klub i Gjimanstikes DRENASI</option>
-          <option value="Akademia e Gjimnastikës FERIZAJ">Akademia e Gjimnastikës FERIZAJ</option>
-          <option value="Klubi i Gjimnastikës PRISHTINA">Klubi i Gjimnastikës PRISHTINA</option>
-        </select></td>
-        <td><input type="number" class="num-elements" min="1" step="1" style="width:60px"/></td>
-        <td class="e-column"><input type="number" step="0.1" class="e-score" style="width:50px"/></td>
-        <td class="e-column"><input type="number" step="0.1" class="e-score" style="width:50px"/></td>
-        <td class="e-column"><input type="number" step="0.1" class="e-score" style="width:50px"/></td>
-        <td class="e-column"><input type="number" step="0.1" class="e-score" style="width:50px"/></td>
-        <td class="e-column e-avg">0<\/td>
-        <td class="d-cr-column"><input type="number" step="0.1" class="d-score" style="width:50px"/><\/td>
-        <td class="d-cr-column"><input type="checkbox" class="cr-check"/><\/td>
-        <td class="d-cr-column"><input type="checkbox" class="cr-check"/><\/td>
-        <td class="d-cr-column"><input type="checkbox" class="cr-check"/><\/td>
-        <td class="d-cr-column"><input type="checkbox" class="cr-check"/><\/td>
-        <td class="final-score-col final-score">0<\/td>
-        <td class="renditja-col renditja">-<\/td>
-        <td><button class="calculate-btn" onclick="calculateRow(this)">Llogarit<\/button><\/td>
-      `;
-      tbody.appendChild(newRow);
-    }
-
-    function calculateRow(btn) {
-      const row = btn.closest('tr');
-      const name = (row.querySelector('.emri-input').value||"").trim();
-      const club = (row.querySelector('.club-select').value||"").trim();
-      const numEl = parseInt(row.querySelector('.num-elements').value) || 0;
-      let startVal = numEl>=7?10:(numEl>=5?8:(numEl===4?5:(numEl>=2?3:(numEl===1?1:0))));
-      let eVals = Array.from(row.querySelectorAll('.e-score')).map(i=>parseFloat(i.value)||0);
-      eVals.sort((a,b)=>a-b);
-      if (eVals.length===4) { eVals.shift(); eVals.pop(); }
-      const eAvg = eVals.length===2 ? (eVals.reduce((a,b)=>a+b,0)/2) : 0;
-      row.querySelector('.e-avg').textContent = eAvg.toFixed(1);
-      const dScore = parseFloat(row.querySelector('.d-score').value)||0;
-      let crCount = Array.from(row.querySelectorAll('.cr-check')).filter(c=>c.checked).length;
-      const final = startVal + dScore + (crCount*0.5) - eAvg;
-      row.querySelector('.final-score').textContent = final.toFixed(1);
-      if (name && club) { finalScores[currentEvent][ currentGroup + '|' + name + '|' + club ] = final; }
-      updateEventRankings();
-    }
-
-    function updateEventRankings() {
-      const rows = Array.from(document.querySelectorAll('#gymnastTable tbody tr'));
-      const sorted = rows.map(r=>({r,score:parseFloat(r.querySelector('.final-score').textContent)||0})).sort((a,b)=>b.score-a.score);
-      sorted.forEach((item,i)=>{ const cell = item.r.querySelector('.renditja'); cell.classList.remove('rank-1','rank-2','rank-3'); const rk = i+1; cell.textContent = rk; if (rk<4) cell.classList.add('rank-'+rk); });
-    }
-
-    function showAllAroundGroup(grp) {
-      document.getElementById('tableContainer').classList.add('hidden');
-      document.getElementById('ekiporeContainer').classList.add('hidden');
-      document.getElementById('allAroundContainer').classList.remove('hidden');
-      document.getElementById('allAroundGroupName').textContent = grp;
-      const tbody = document.querySelector('#allAroundTable tbody'); tbody.innerHTML = '';
-      const events = ['Kapercime','Paralele e Shkallëzuar','Tra','Parter'];
-      let results = {};
-      events.forEach(ev=>{ const store = finalScores[ev]; Object.keys(store).forEach(key=>{ const [g,name,cl] = key.split('|'); if (g===grp) { if (!results[key]) results[key]={name,club:cl,scores:{},total:0}; results[key].scores[ev]=store[key]; }}); });
-      Object.values(results).forEach(item=>{ item.total = events.reduce((s,e)=>s+(item.scores[e]||0),0); });
-      Object.values(results).sort((a,b)=>b.total-a.total).forEach((info,i)=>{ const rk=i+1,cls=rk<4?'rank-'+rk:''; const tr=document.createElement('tr'); tr.innerHTML=`<td>${info.name}</td><td>${info.club}</td><td>${(info.scores['Kapercime']||0).toFixed(1)}</td><td>${(info.scores['Paralele e Shkallëzuar']||0).toFixed(1)}</td><td>${(info.scores['Tra']||0).toFixed(1)}</td><td>${(info.scores['Parter']||0).toFixed(1)}</td><td>${info.total.toFixed(1)}</td><td class="${cls}">${rk}</td>`; tbody.appendChild(tr); });
-    }
-
-    function showEkipore() {
-      document.getElementById('tableContainer').classList.add('hidden');
-      document.getElementById('allAroundContainer').classList.add('hidden');
-      document.getElementById('ekiporeContainer').classList.remove('hidden');
-      const tbody = document.querySelector('#ekiporeTable tbody'); tbody.innerHTML = '';
-      const clubs = [
-        'Akademia e Gjimnastikës UNIVERSITETI',
-        'Adakemia e Gjimnastikës ARDHMËRIA',
-        'Klubi i Gjimnastikës ELITA',
-        'Klubi I Gjimnastikës FUSHË KOSOVË',
-        'Klubi i Gjimnastikës VUSHTRRIA',
-        'Klubi i Gjimnastikës TREPÇA',
-        'Klubi i Gjimnastikës OMNISPORT',
-        'Klubi i Gjimnastikës "HALIL ALIDEMA" Viti',
-        'Klubi i Gjimnastikës "HALIL ALIDEMA" Gjilan',
-        'Klubi i Gjimnastikës LIPJAN',
-        'Klubi i Gjimnastikës KULINA',
-        'Klubi i Gjimnastikës LLAPI',
-        'Klubi i Gjimnastikës SKENDERAJ',
-        'Klubi i Gjimnastikës GJIMNASTIKA',
-        'Klubi i Gjimnastikës Ritmike POISE',
-        'Klub i Gjimanstikes DRENASI',
-        'Akademia e Gjimnastikës FERIZAJ',
-        'Klubi i Gjimnastikës PRISHTINA'
-      ];
-      const events = ['Kapercime','Paralele e Shkallëzuar','Tra','Parter'];
-      let team = {};
-      clubs.forEach(c=>team[c]={Kap:0,'Paralele e Shkallëzuar':0,Tra:0,Parter:0,total:0});
-      events.forEach(ev=>{
-        const store = finalScores[ev];
-        let byClub = {};
-        clubs.forEach(c=>byClub[c]=[]);
-        Object.entries(store).forEach(([k,v])=>{ const c = k.split('|')[2]; if(byClub[c]) byClub[c].push(v); });
-        clubs.forEach(c=>{ byClub[c].sort((a,b)=>b-a);
-          team[c][ev] = byClub[c].slice(0,5).reduce((a,b)=>a+b,0);
-        });
-      });
-      clubs.forEach(c=>team[c].total = events.reduce((s,e)=>s+team[c][e],0));
-      Object.entries(team).map(([c,d])=>({club:c,...d})).sort((a,b)=>b.total-a.total).forEach((info,i)=>{
-        const rk=i+1,cls=rk<4?'rank-'+rk:'';
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${info.club}</td><td>${info.Kap.toFixed(1)}</td><td>${info['Paralele e Shkallëzuar'].toFixed(1)}</td><td>${info.Tra.toFixed(1)}</td><td>${info.Parter.toFixed(1)}</td><td>${info.total.toFixed(1)}</td><td class="${cls}">${rk}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
+    // **Pjesa tjetër e JS për funksionet**:
+    // showEventTable, addGymnastRow, calculateRow, updateEventRankings,
+    // showAllAroundGroup, showEkipore
+    // (kopjoje këtu kodin e mëparshëm pa ndryshime)
   </script>
-<script>
-  async function signIn() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    try {
-      const user = await Auth.signIn(username, password);
-      document.getElementById('login-message').style.color = 'green';
-      document.getElementById('login-message').innerText = 'Login successful!';
-      document.getElementById('login-section').style.display = 'none';
-
-      // Show judging tables after login
-      document.getElementById('tableContainer').style.display = 'block';
-      document.getElementById('allAroundContainer').style.display = 'block';
-      document.getElementById('ekiporeContainer').style.display = 'block';
-    } catch (error) {
-      document.getElementById('login-message').style.color = 'red';
-      document.getElementById('login-message').innerText = 'Login failed: ' + error.message;
-    }
-  }
-
-  // On page load, check if user is already logged in
-  Auth.currentAuthenticatedUser()
-    .then(user => {
-      document.getElementById('login-section').style.display = 'none';
-      document.getElementById('tableContainer').style.display = 'block';
-      document.getElementById('allAroundContainer').style.display = 'block';
-      document.getElementById('ekiporeContainer').style.display = 'block';
-    })
-    .catch(() => {
-      document.getElementById('login-section').style.display = 'block';
-    });
-</script>
-
 </body>
 </html>
